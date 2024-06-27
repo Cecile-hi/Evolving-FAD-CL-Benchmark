@@ -1,0 +1,50 @@
+base:
+  data_folder_path : '/data3/zhangxiaohui/FAD-CL-Benchmark/labeled_images'
+  # data_train_path : '/data3/zhangxiaohui/FAD-CL-Benchmark/labeled_images'
+  # data_train_path : ''
+  data_train_path: "/data1/zhangxiaohui/all_dataset/FAD-CL-Benchmark/features/train_fadcl_wav2vec_feature"
+  # data_test_path : '/data3/zhiqiul/clear_datasets/CLEAR10-TEST-CLEANED/labeled_images'
+  # data_test_path : ''
+  data_test_path: "/data1/zhangxiaohui/all_dataset/FAD-CL-Benchmark/features/test_fadcl_wav2vec_feature"
+  # feature_path : '/data/jiashi/'
+  feature_path : '/data1/zhangxiaohui/all_dataset/FAD-CL-Benchmark/features/'
+  class_list : 'fake real'
+
+training:
+  # method : 'LwF Replay  Reservoir BiasReservoir_Fixed_reset_0.2 BiasReservoir_Dynamic_1.0 ' 
+  method : 'AR1' 
+  split : 'clear10_moco_res50_public_private'
+  restart : '0'
+  timestamp : 7
+  num_classes : 2
+  num_instance_each_class : 1000
+  num_instance_each_class_test : 250
+  load_prev: False # whether load previous unfinished timestamp training 
+  eval: False
+
+image_train:
+  image_train_model_arch: 'resnet50' 
+  image_train_pretrain: True
+  image_train_attribute: ''
+
+feature_train:
+  pretrain_feature : 'fadcl_wav2vec_feature'
+  # pretrain_feature : "CNN" 
+  pretrain_feature_shape: 1024
+  
+  
+
+parameter:
+  nepoch : 40
+  batch_size : 64
+  step_schedular_decay : 600
+  schedular_step : 1
+  start_lr : 0.0001
+  weight_decay : 0
+  momentum : 0.9
+  random_seed : 1111
+  test_split : 0.3
+  max_memory_size : 30000000
+
+
+    
