@@ -12,14 +12,30 @@ from typing import Optional, Sequence, List, Union
 
 from torch.nn import Module, CrossEntropyLoss
 from torch.optim import Optimizer, SGD
+import torch.nn as nn
 
 from avalanche.models.pnn import PNN
 from avalanche.training.plugins.evaluation import default_logger
 from avalanche.training.plugins import StrategyPlugin, CWRStarPlugin, \
     ReplayPlugin, GDumbPlugin, LwFPlugin, AGEMPlugin, GEMPlugin, EWCPlugin, \
     EvaluationPlugin, SynapticIntelligencePlugin, CoPEPlugin, \
-    GSS_greedyPlugin, LFLPlugin, OWMPlugin, RAWMPlugin, RWMPlugin
+    GSS_greedyPlugin, LFLPlugin, OWMPlugin, RAWMPlugin, RWMPlugin, ELMAPlugin
 from avalanche.training.strategies.base_strategy import BaseStrategy
+
+import copy
+import os
+import torch
+import loralib as lora
+import numpy as np
+import torch.optim as optim
+# from avalanche.training.plugins.strategy_plugin import StrategyPlugin
+from avalanche.models.dynamic_optimizers import reset_optimizer
+from collections import defaultdict
+from typing import Optional, Sequence, Union, List
+from avalanche.benchmarks.scenarios import Experience
+from avalanche.evaluation.metrics.eer_metrics import compute_eer
+import torch.nn.functional as F
+from tqdm import tqdm
 
 
 class Naive(BaseStrategy):
@@ -808,7 +824,6 @@ class LFL(BaseStrategy):
             train_mb_size=train_mb_size, train_epochs=train_epochs,
             eval_mb_size=eval_mb_size, device=device, plugins=plugins,
             evaluator=evaluator, eval_every=eval_every)
-
 
 __all__ = [
     'Naive',

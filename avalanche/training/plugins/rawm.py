@@ -37,9 +37,7 @@ class RAWMPlugin(StrategyPlugin):
 
     # @torch.no_grad()
     def before_update(self, strategy, **kwargs):
-        # import pdb
-        # pdb.set_trace()
-        fake_num, real_num = torch.unique(strategy.mb_y, return_counts=True)[1]
+        real_num, fake_num = torch.unique(strategy.mb_y, return_counts=True)[1]
         beta = (real_num + 1) / (fake_num + 1) 
         lamda = strategy.i_batch / len(strategy.dataloader) + 1
         alpha = 1.0 * 1 ** lamda

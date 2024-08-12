@@ -249,7 +249,8 @@ class BaseStrategy:
 
     def criterion(self):
         """ Loss function. """
-        # import pdb;pdb.set_trace()
+        if isinstance(self.mb_output, tuple):
+            self.mb_output = self.mb_output[0]
         return self._criterion(self.mb_output, self.mb_y)
 
     def train(self, experiences: Union[Experience, Sequence[Experience]],
@@ -270,12 +271,13 @@ class BaseStrategy:
         :return: dictionary containing last recorded value for
             each metric name.
         """
+
         self.is_training = True
         self._stop_training = False
 
         self.model.train()
         self.model.to(self.device)
-
+        
         # Normalize training and eval data.
         if not isinstance(experiences, Sequence):
             experiences = [experiences]
@@ -420,6 +422,7 @@ class BaseStrategy:
             self._before_eval_exp(**kwargs)
             self.eval_epoch(**kwargs)
             self._after_eval_exp(**kwargs)
+            
             scores = torch.cat(self.score_loader, 0).data.cpu().numpy()
             labels = torch.cat(self.target_loader, 0).data.cpu().numpy()
             
@@ -509,12 +512,12 @@ class BaseStrategy:
         :param kwargs:
         :return:
         """
-        
         for self.i_batch, self.mbatch in enumerate(self.dataloader):
             # self.dataloader._dl.datasets[0]._indices
             if self._stop_training:
                 break
-
+            # if self.current_train_exp_id != 0:
+            #     import pdb; pdb.set_trace()
             self._unpack_minibatch()
             self._before_training_iteration(**kwargs)
 
@@ -522,8 +525,6 @@ class BaseStrategy:
             self.loss = 0
 
             # Forward
-            # import pdb 
-            # pdb.set_trace()
             self._before_forward(**kwargs)
             self.mb_output = self.forward()
             self._after_forward(**kwargs)
@@ -623,6 +624,8 @@ class BaseStrategy:
 
     def eval_epoch(self, **kwargs):
         """Evaluation loop over the current `self.dataloader`."""
+        self.score_loader = []
+        self.target_loader = []
         for self.mbatch in self.dataloader:
             self._unpack_minibatch()
             self._before_eval_iteration(**kwargs)

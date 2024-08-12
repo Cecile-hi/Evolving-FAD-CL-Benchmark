@@ -10,4 +10,4 @@ def delete_pycache(directory):
                 print(f"Deleted {pycache_dir}")
 
 # 删除指定目录下和其子目录下的所有 __pycache__ 目录
-delete_pycache("/data1/zhangxiaohui/all_dataset/FAD-CL-Benchmark")
+delete_pycache("./")

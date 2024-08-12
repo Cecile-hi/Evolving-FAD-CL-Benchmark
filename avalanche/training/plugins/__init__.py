@@ -16,3 +16,4 @@ from .lr_scheduling import LRSchedulerPlugin
 from .owm import OWMPlugin
 from .rawm import RAWMPlugin
 from .rwm import RWMPlugin
+from .Elma import ELMAPlugin

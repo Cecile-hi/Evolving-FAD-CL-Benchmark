@@ -1,0 +1,53 @@
+base:
+  data_train_path : ''
+  data_train_path: "/data1/zhangxiaohui/all_dataset/FAD-CL-Benchmark/features/train_fadcl_wav2vec"
+  data_test_path: "/data1/zhangxiaohui/all_dataset/FAD-CL-Benchmark/features/test_fadcl_wav2vec"
+  feature_path : '/data1/zhangxiaohui/all_dataset/FAD-CL-Benchmark/features/'
+  class_list : 'real fake' # Real: 0; Fake: 1
+
+training:
+  # The number in the end of each method is the ratio that used in train/test datasets
+  # method : 'LwF Replay  Reservoir BiasReservoir_Fixed_reset_0.2 BiasReservoir_Dynamic_1.0 ' 
+  # method : 'GDumb GDumbFinetune GEM AGEM AGEMFixed SynapticIntelligence ICaRL'
+  method : 'ELMA'
+  # method: 'Naive' 
+  split : 'wav2vec'
+  restart : '0' # If restart = 1, clear all old checkpoints
+  timestamp : 8
+  num_classes : 2
+  num_instance_each_class : 1000
+  num_instance_each_class_test : 250
+  load_prev: False # whether load ckpt of the previous methods 
+  eval: False
+
+image_train:
+  image_train_model_arch: 'resnet50' 
+  image_train_pretrain: True
+  image_train_attribute: ''
+
+feature_train:
+  # pretrain_feature : 'fadcl_wav2vec_feature'
+  pretrain_feature: 'fadcl_wav2vec'
+  pretrain_feature_shape: 1024
+  
+  
+
+parameter:
+  # nepoch : 100
+  nepoch: 20
+  batch_size : 1 # 32
+  step_schedular_decay : 600
+  schedular_step : 1
+  start_lr : 0.00001
+  weight_decay : 0
+  momentum : 0.9
+  seed : 1111
+  test_split : 0.3
+  buffer_ratio : 0.3 # The ratio of data will be append to data buffer used for Replay/GDumb*/*Reservoir/AGEM*/CoPE
+  max_memory_size : 2000 # Max Data Num in Buffer 
+  layer_num: 7
+  lora_rank: 4
+  hidden_dim: 512
+
+
+    

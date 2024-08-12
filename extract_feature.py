@@ -77,21 +77,22 @@ def collator(input_):
 
 
 def extract_feature(args):
-    dataset,all_timestamp_index=get_feature_extract_loader(args)
-    loader=DataLoader(dataset,batch_size=1,shuffle=False,collate_fn=collator)
     os.makedirs(args.feature_path,exist_ok=True)
     feature=args.pretrain_feature
+    feature_path=os.path.join(args.feature_path,'{}'.format(feature))
+    class_list=args.class_list.split()
+    # If features already exist
+    if(os.path.isdir(feature_path)):
+        return args
+
+    dataset, all_timestamp_index = get_feature_extract_loader(args)
+    loader = DataLoader(dataset,batch_size=1,shuffle=False,collate_fn=collator)
     split_compo=args.pretrain_feature.split('_')[:-1] # name like moco_resnet18_clear_10_feature
     if(len(split_compo)==4):
         pre_dataset,pre_net,_,_=split_compo
         # train_test_prefix=""
     elif(len(split_compo)==5):
         train_test_prefix,pre_dataset,pre_net,_,_=split_compo
-    feature_path=os.path.join(args.feature_path,'{}'.format(feature))
-    class_list=args.class_list.split()
-    if(os.path.isdir(feature_path)):
-        return args
-
     # create feature folder
     os.makedirs(feature_path,exist_ok=True)
     for ii in range(1,args.timestamp+1):
@@ -111,11 +112,7 @@ def extract_feature(args):
         model=moco_v2_yfcc_feb18_bucket_0_gpu_8(model)
         model.fc = torch.nn.Identity()
     elif(pre_dataset=='imagenet' and pre_net=='resnet50'):
-        # import pdb
-        # model=resnet18(pretrained=True)
         model = resnet50(pretrained=True)
-        # model.layer4 = torch.nn.Identity()
-        # model.avgpool = torch.nn.Identity()
         model.fc = torch.nn.Identity()
 
     else:
@@ -137,16 +134,5 @@ def extract_feature(args):
         torch.save(output,os.path.join(target_path,'{}.pth'.format(prefix)))
         # plt.imsave(os.path.join(target_path,'{}.png'.format(prefix)),image.detach().cpu().numpy()[0].transpose(1,2,0).astype('uint8'))
     return args
-
-
-
-
-
-# global args
-# parser=get_config()
-# args = parser.parse_args()
-# feature_list=['moco']
-# # import pdb;pdb.set_trace()
-# extract_feature(args,feature_list)
 
 

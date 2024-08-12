@@ -27,7 +27,8 @@ class RWMPlugin(StrategyPlugin):
         super().__init__()
 
         dtype = torch.cuda.FloatTensor  # run on GPU
-        self.target2ti = {"0":-1, "1":1, "2":-1, "3":-1, "4":-1, "5":-1, "6":1, "7":1, "8":-1, "9":1, "10":-1}
+        # self.target2ti = {"0":-1, "1":1, "2":-1, "3":-1, "4":-1, "5":-1, "6":1, "7":1, "8":-1, "9":1, "10":-1}
+        self.target2ti = {"0":1, "1":-1}
         with torch.no_grad():
             self.Pl = torch.autograd.Variable(torch.eye(2048).type(dtype))
             self.Ql = torch.autograd.Variable(torch.eye(2048).type(dtype))

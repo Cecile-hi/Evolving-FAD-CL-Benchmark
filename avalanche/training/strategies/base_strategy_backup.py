@@ -265,7 +265,6 @@ class BaseStrategy:
 
         self.model.train()
         self.model.to(self.device)
-
         # Normalize training and eval data.
         if not isinstance(experiences, Sequence):
             experiences = [experiences]
