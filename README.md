@@ -4,6 +4,19 @@ This repository hosts the official project of the paper ["Towards Robust Audio D
 
 Test your deepfake audio detection model’s continual learning ability using our benchmark, which supports various state-of-the-art methods.
 
+| **Method (EER%)** | **T1** | **T2** | **T3** | **T4** | **T5** | **T6** | **T7** | **T8** |
+|:-----------------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
+| Replay            | 7.6    | 3.6    | 8.0    | 9.6    | 3.6    | 29.6   | 16.0   | 14.8   |
+| EWC               | 12.0   | 18.4   | 26.0   | 26.8   | 4.4    | 38.4   | 27.2   | 22.4   |
+| OWM               | 28.4   | 41.2   | 44.0   | 30.0   | 43.6   | 46.4   | 43.2   | 48.0   |
+| GEM               | 17.2   | 17.2   | 25.6   | 19.6   | 20.8   | 44.4   | 33.2   | 21.6   |
+| LwF               | 12.4   | 11.6   | 22.8   | 29.6   | 7.2    | 37.2   | 27.2   | 22.0   |
+| RAWM              | 19.2   | 19.6   | 23.6   | 31.6   | 11.6   | 38.4   | 29.6   | 26.4   |
+| RWM               | 8.0    | 24.8   | 29.6   | 27.6   | 11.6   | 36.0   | 22.8   | 20.0   |
+| SI                | 13.2   | 12.0   | 19.2   | 30.4   | 5.2    | 40.0   | 26.4   | 22.4   |
+| ELMA (Ours)       | 5.6    | 2.8    | 3.2    | 6.0    | 2.0    | 20.8   | 16.0   | 13.6   |
+
+
 ## 🚀 Quick Start
 
 ### Step 1: Set up the environment
