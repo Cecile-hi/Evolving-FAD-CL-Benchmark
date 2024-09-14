@@ -1,0 +1,8 @@
+Eval on Task1 Task2 Task3 Task4 Task5 Task6 Task7
+Train after Task1 [0.356, 0.384, 0.476, 0.472, 0.448, 0.236, 0.336]
+Train after Task2 [0.376, 0.392, 0.472, 0.46, 0.44, 0.256, 0.352]
+Train after Task3 [0.448, 0.42, 0.496, 0.44, 0.468, 0.36, 0.412]
+Train after Task4 [0.996, 0.992, 0.984, 0.996, 0.988, 1.0, 0.98]
+Train after Task5 [1.0, 0.996, 1.0, 1.0, 1.0, 1.0, 1.0]
+Train after Task6 [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+Train after Task7 [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
