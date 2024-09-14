@@ -32,27 +32,28 @@ class ELMA(BaseStrategy):
                  train_mb_size: int = 1, train_epochs: int = 1,
                  eval_mb_size: int = None, device=None,
                  plugins: Optional[List[StrategyPlugin]] = None,
-                 evaluator: EvaluationPlugin = default_logger, eval_every=-1):
+                 evaluator: EvaluationPlugin = default_logger, eval_every=-1, split = ""):
 
         dtype = torch.cuda.FloatTensor  # run on GPU
         self.optimizer = optimizer
-        param_group = optimizer.param_groups[0]
+        # param_group = optimizer.param_groups[0]
 
         # Get Lr and Wd
-        self.lora_learning_rate = param_group['lr'] * 100
-        self.lora_weight_decay = param_group['weight_decay']
+        # self.lora_learning_rate = param_group['lr'] * 100
+        # self.lora_weight_decay = param_group['weight_decay']
 
-        self.optimizer_A =  optim.Adam((param for name, param in model.named_parameters() if 'lora_A' in name), 
-                            lr = self.lora_learning_rate, weight_decay = self.lora_weight_decay)
-        self.optimizer_B =  optim.Adam((param for name, param in model.named_parameters() if 'lora_B' in name), 
-                            lr = self.lora_learning_rate, weight_decay = self.lora_weight_decay)
+        # self.optimizer_A =  optim.Adam((param for name, param in model.named_parameters() if 'lora_A' in name), 
+        #                     lr = self.lora_learning_rate, weight_decay = self.lora_weight_decay)
+        # self.optimizer_B =  optim.Adam((param for name, param in model.named_parameters() if 'lora_B' in name), 
+        #                     lr = self.lora_learning_rate, weight_decay = self.lora_weight_decay)
         
         self.lora_checkpoints_dir = "/data1/zhangxiaohui/all_dataset/FAD-CL-Benchmark/lora_cpts"
+        self.lora_checkpoints_dir = os.path.join(self.lora_checkpoints_dir, split)
         os.makedirs(self.lora_checkpoints_dir, exist_ok=True)
         os.system("rm -f {}/*".format(self.lora_checkpoints_dir))
         
-        self.scheduler_A = None
-        self.scheduler_B = None
+        # self.scheduler_A = None
+        # self.scheduler_B = None
         
         super().__init__(
             model, optimizer, criterion,
@@ -94,11 +95,13 @@ class ELMA(BaseStrategy):
                 nn.init.kaiming_uniform_(param, a=math.sqrt(5))
             elif "lora_B" in name:
                 nn.init.zeros_(param)
+                # nn.init.kaiming_uniform_(param, a=math.sqrt(5))
     
     def save_after_exp(self):
         # if self.current_train_exp_id == 0:
             # torch.save(self.model.state_dict(), os.path.join(self.lora_checkpoints_dir, "base_model.pt"))
-        state_dict = self.model.state_dict()
+        # state_dict = self.model.state_dict()
+        state_dict = self.plugins[1].best_state
         filtered_state_dict = {k: v for k, v in state_dict.items() if "lora_" not in k}
         torch.save(filtered_state_dict, os.path.join(self.lora_checkpoints_dir, "base_model_{}.pt".format(self.current_train_exp_id)))
         # Save current_lora
@@ -110,7 +113,7 @@ class ELMA(BaseStrategy):
         lora_B_state_dict = {name: param.clone().detach() for name, param in lora_B_params.items()}
         torch.save(lora_B_state_dict, os.path.join(self.lora_checkpoints_dir, "B_{}.pt".format(self.current_train_exp_id)))
         
-    def make_optimizer(self):
+    def mymake_optimizer(self):
         """
         Initialize optimizer when first experience;
         and
@@ -213,10 +216,10 @@ class ELMA(BaseStrategy):
         self.model = self.model_adaptation()
         
         # Model Init
-        if self.current_train_exp_id != 0:
-            self.initialize_lora_parameters(self.model)
-            self.Init_use_best_A()
-            lora.mark_only_lora_as_trainable(self.model)
+        self.initialize_lora_parameters(self.model)
+        lora.mark_only_lora_as_trainable(self.model)
+        # if self.current_train_exp_id != 0:
+        #     self.Init_use_best_A()
             
         # Optimizer Adaptation (e.g. freeze/add new units)
         self.make_optimizer()
@@ -237,7 +240,7 @@ class ELMA(BaseStrategy):
 
             self.training_epoch(**kwargs)
             # Reduce the lr on lora_A/B
-            self.step_schedulers()
+            # self.step_schedulers()
             
             self._after_training_epoch(**kwargs)
             self._periodic_eval(eval_streams, do_final=False)
@@ -247,7 +250,7 @@ class ELMA(BaseStrategy):
         self._periodic_eval(eval_streams, do_final=do_final)
         self._after_training_exp(**kwargs)
 
-    def mytraining_epoch(self, **kwargs):
+    def mytraining_epoch_v1(self, **kwargs):
         """ Training epoch.
         
         :param kwargs:
@@ -353,13 +356,371 @@ class ELMA(BaseStrategy):
                 self.mb_output = torch.cat(mb_out_list, dim = 0)
             self._after_training_iteration(**kwargs)         
 
+    def mytraining_epoch_v2(self, **kwargs):
+        """ Training epoch.
+        
+        :param kwargs:
+        :return:
+        """
+        for self.i_batch, self.mbatch in enumerate(self.dataloader):
+            if self._stop_training:
+                break
+
+            self._unpack_minibatch()
+            self._before_training_iteration(**kwargs)
+
+            self.optimizer.zero_grad()
+            self.loss = 0
+
+            # Forward
+            self._before_forward(**kwargs)
+            self.mb_output = self.forward()
+            self._after_forward(**kwargs)
+
+            # Loss & Backward
+            self.loss += self.criterion()
+            self._before_backward(**kwargs)
+            self.loss.backward()
+
+            # 参数选择性更新逻辑
+            if self.current_train_exp_id != 0:
+                target_param_name = "lora_A" if self.mb_y == 0 else "lora_B"
+                for name, param in self.model.named_parameters():
+                    if target_param_name not in name:
+                        param.grad = None  # 清除不需要更新的参数的梯度
+
+            self.optimizer.step()  # 统一在此处更新参数
+
+            self._after_backward(**kwargs)
+            self._before_update(**kwargs)
+            self._after_update(**kwargs)
+
+            self._after_training_iteration(**kwargs)
+            
     def load_for_eval(self, lora_id):
+        print("load chpts from lora ID {} ...".format(lora_id))
         # Load the pretrained checkpoint first
         self.model.load_state_dict(torch.load(os.path.join(self.lora_checkpoints_dir, "base_model_{}.pt".format(lora_id))), strict=False)
         # Then load the LoRA checkpoint
         self.model.load_state_dict(torch.load(os.path.join(self.lora_checkpoints_dir, "A_{}.pt".format(lora_id))), strict=False)
         self.model.load_state_dict(torch.load(os.path.join(self.lora_checkpoints_dir, "B_{}.pt".format(lora_id))), strict=False)
-                
+
+    def mytraining_epoch_v3(self, **kwargs):
+        """ Training epoch.
+        
+        :param kwargs:
+        :return:
+        """
+        for self.i_batch, self.mbatch in enumerate(self.dataloader):
+            if self._stop_training:
+                break
+            
+            self._unpack_minibatch()
+            self._before_training_iteration(**kwargs)
+
+            # Reset gradients before each batch
+            self.optimizer.zero_grad()
+
+            if self.current_train_exp_id == 0:
+                """
+                Train model and lora_A/B_1
+                """
+                self.loss = 0
+
+                # Forward
+                self._before_forward(**kwargs)
+                self.mb_output = self.forward()
+                self._after_forward(**kwargs)
+
+                # Loss & Backward
+                self.loss += self.criterion()
+
+                self._before_backward(**kwargs)
+                self.loss.backward()
+                self._after_backward(**kwargs)
+
+                # Optimization step
+                self._before_update(**kwargs)
+                self.optimizer.step()
+                self._after_update(**kwargs)
+
+            else:
+                """
+                Only train lora_A/B_n with conditional freezing of lora_A based on label
+                """
+                input_f = torch.stack([self.mb_x[i].to(self.device) for i in range(len(self.mb_x)) if self.mb_y[i] == 1])
+                input_r = torch.stack([self.mb_x[i].to(self.device) for i in range(len(self.mb_x)) if self.mb_y[i] == 0])
+                label_f = torch.tensor([self.mb_y[i] for i in range(len(self.mb_y)) if self.mb_y[i] == 1]).to(self.device)
+                label_r = torch.tensor([self.mb_y[i] for i in range(len(self.mb_y)) if self.mb_y[i] == 0]).to(self.device)
+                mb_out_list = []
+
+                # Handle Fake samples (label=1): Train Lora B
+                # Ensure lora_A's requires_grad is True (unfrozen)
+                for name, param in self.model.named_parameters():
+                    if 'lora_A' in name:
+                        param.requires_grad = False
+
+                # Forward Fake
+                self._before_forward(**kwargs)
+                self.mb_output = self.model(input_f)
+                mb_out_list.append(self.mb_output)
+                self._after_forward(**kwargs)
+
+                # Compute Loss for Fake samples
+                self.loss = self.criterion(mb_y=label_f)
+
+                # Backward and optimize
+                self._before_backward(**kwargs)
+                self.loss.backward()
+                self._after_backward(**kwargs)
+                self.optimizer.step()
+                self.optimizer.zero_grad()
+
+                # Handle Real samples (label=0): Train Lora A
+                # Freeze lora_A parameters
+                for name, param in self.model.named_parameters():
+                    if 'lora_A' in name:
+                        param.requires_grad = True
+
+                # Forward Real
+                self._before_forward(**kwargs)
+                self.mb_output = self.model(input_r)
+                mb_out_list.append(self.mb_output)
+                self._after_forward(**kwargs)
+
+                # Compute Loss for Real samples
+                self.loss = self.criterion(mb_y=label_r)
+
+                # Backward and optimize
+                self._before_backward(**kwargs)
+                self.loss.backward()
+                self._after_backward(**kwargs)
+                self.optimizer.step()
+
+                # Combine outputs
+                self.mb_output = torch.cat(mb_out_list, dim=0)
+
+            self._after_training_iteration(**kwargs)
+    
+    def mytraining_epoch_v4(self, lora_lr_scale=100, **kwargs):
+        """ Training epoch with scaled learning rate for LoRA parameters.
+        
+        :param lora_lr_scale: The scaling factor for the learning rate of LoRA parameters
+        :param kwargs:
+        :return:
+        """
+        # Initialize the optimizer with a higher learning rate for LoRA parameters
+        # Assuming you have separate optimizers for lora_A and lora_B
+
+        for self.i_batch, self.mbatch in enumerate(self.dataloader):
+            if self._stop_training:
+                break
+
+            self._unpack_minibatch()
+            self._before_training_iteration(**kwargs)
+
+            # Reset gradients before each batch
+            self.optimizer.zero_grad()
+
+            if self.current_train_exp_id != -1:
+                """
+                Train model and lora_A/B_1
+                """
+                self.loss = 0
+                # import pdb; pdb.set_trace()
+                # Forward
+                self._before_forward(**kwargs)
+                self.mb_output = self.forward()
+                self._after_forward(**kwargs)
+
+                # Loss & Backward
+                self.loss += self.criterion()
+
+                self._before_backward(**kwargs)
+                self.loss.backward()
+                self._after_backward(**kwargs)
+
+                # Optimization step
+                self._before_update(**kwargs)
+                self.optimizer.step()
+                self._after_update(**kwargs)
+
+            else:
+                """
+                Only train lora_A/B_n with learning rate scaling for lora parameters
+                """
+                # import pdb; pdb.set_trace()
+                input_f = torch.stack([self.mb_x[i].to(self.device) for i in range(len(self.mb_x)) if self.mb_y[i] == 1])
+                input_r = torch.stack([self.mb_x[i].to(self.device) for i in range(len(self.mb_x)) if self.mb_y[i] == 0])
+                label_f = torch.tensor([self.mb_y[i] for i in range(len(self.mb_y)) if self.mb_y[i] == 1]).to(self.device)
+                label_r = torch.tensor([self.mb_y[i] for i in range(len(self.mb_y)) if self.mb_y[i] == 0]).to(self.device)
+                mb_out_list = []
+
+                # Handle Fake samples (label=1): Train Lora B
+                # Freeze lora_A parameters
+                for name, param in self.model.named_parameters():
+                    if 'lora_A' in name:
+                        param.requires_grad = True # False
+
+                # Forward Fake
+                self._before_forward(**kwargs)
+                self.mb_output = self.model(input_f)
+                mb_out_list.append(self.mb_output)
+                self._after_forward(**kwargs)
+
+                # Compute Loss for Fake samples
+                self.loss = self.criterion(mb_y=label_f)
+
+                # Backward and optimize only LoRA B parameters
+                self._before_backward(**kwargs)
+                self.loss.backward()
+
+                # Scale the gradients for lora_B by the specified learning rate factor
+                # for name, param in self.model.named_parameters():
+                #     if 'lora_B' in name and param.requires_grad:
+                #         param.grad.data.mul_(lora_lr_scale)
+
+                self._after_backward(**kwargs)
+                self.optimizer.step()
+                self.optimizer.zero_grad()
+
+                # Handle Real samples (label=0): Train Lora A
+                # Freeze lora_B parameters
+                for name, param in self.model.named_parameters():
+                    if 'lora_A' in name:
+                        param.requires_grad = True
+
+                # Forward Real
+                self._before_forward(**kwargs)
+                self.mb_output = self.model(input_r)
+                mb_out_list.append(self.mb_output)
+                self._after_forward(**kwargs)
+
+                # Compute Loss for Real samples
+                self.loss = self.criterion(mb_y=label_r)
+
+                # Backward and optimize only LoRA A parameters
+                self._before_backward(**kwargs)
+                self.loss.backward()
+
+                # Scale the gradients for lora_A/B by the specified learning rate factor
+                # for name, param in self.model.named_parameters():
+                #     if 'lora_' in name and param.requires_grad:
+                #         param.grad.data.mul_(lora_lr_scale)
+
+                self._after_backward(**kwargs)
+                self.optimizer.step()
+
+                # Combine outputs
+                self.mb_output = torch.cat(mb_out_list, dim=0)
+
+            self._after_training_iteration(**kwargs)
+    
+    def training_epoch(self, lora_lr_scale=100, **kwargs):
+        """ Training epoch with scaled learning rate for LoRA parameters.
+        
+        :param lora_lr_scale: The scaling factor for the learning rate of LoRA parameters
+        :param kwargs:
+        :return:
+        """
+        # Initialize the optimizer with a higher learning rate for LoRA parameters
+        # Assuming you have separate optimizers for lora_A and lora_B
+
+        for self.i_batch, self.mbatch in enumerate(self.dataloader):
+            if self._stop_training:
+                break
+
+            self._unpack_minibatch()
+            self._before_training_iteration(**kwargs)
+
+            # Reset gradients before each batch
+            self.optimizer.zero_grad()
+            
+            self._before_forward(**kwargs)
+            self.mb_output = self.forward()
+            self._after_forward(**kwargs)
+
+            # Loss & Backward
+            self.losses = self.criterion()
+            self.loss = self.losses.mean()
+            
+            self._before_backward(**kwargs)
+            
+            if self.current_train_exp_id != 100:
+                """
+                Train lora_A/B
+                """
+                # Compute gradients
+                self.loss.backward()
+            else:
+                for i in range(len(self.mb_x)):
+                    # self.optimizer.zero_grad()
+                    label_sample = self.mb_y[i]
+                    loss_sample = self.losses[i]/len(self.mb_x)
+
+                    # Freeze lora_A parameters if label == 1 (fake sample)
+                    for name, param in self.model.named_parameters():
+                        if 'lora_A' in name:
+                            param.requires_grad = False if label_sample == 1 else True
+
+                    # Backward pass to compute gradients for this sample
+                    loss_sample.backward(retain_graph=True)  # Compute gradient for this sample
+               
+            self._after_backward(**kwargs)
+
+            # Optimization step
+            self._before_update(**kwargs)
+            self.optimizer.step()
+            self._after_update(**kwargs)
+
+            self._after_training_iteration(**kwargs)
+    
+    def mytraining_epoch_v6(self, lora_lr_scale=100, **kwargs):
+        """ Training epoch with scaled learning rate for LoRA parameters.
+        
+        :param lora_lr_scale: The scaling factor for the learning rate of LoRA parameters
+        :param kwargs:
+        :return:
+        """
+        # Initialize the optimizer with a higher learning rate for LoRA parameters
+        # Assuming you have separate optimizers for lora_A and lora_B
+
+        for self.i_batch, self.mbatch in enumerate(self.dataloader):
+            if self._stop_training:
+                break
+
+            self._unpack_minibatch()
+            self._before_training_iteration(**kwargs)
+
+            # Reset gradients before each batch
+            self.optimizer.zero_grad()
+
+            # Before forward, adjust requires_grad based on the label
+            assert len(self.mb_x) == 1  # Assuming batch_size=1
+            label_sample = self.mb_y[0]
+            for name, param in self.model.named_parameters():
+                if 'lora_A' in name:
+                    param.requires_grad = False if label_sample == 1 else True
+
+            self._before_forward(**kwargs)
+            self.mb_output = self.forward()
+            self._after_forward(**kwargs)
+
+            # Loss & Backward
+            self.losses = self.criterion()
+            self.loss = self.losses.mean()
+
+            self._before_backward(**kwargs)
+            self.loss.backward()
+            self._after_backward(**kwargs)
+
+            # Optimization step
+            self._before_update(**kwargs)
+            self.optimizer.step()
+            self._after_update(**kwargs)
+
+            self._after_training_iteration(**kwargs)
+           
     def calculate_entropy(self, probabilities):
         epsilon = 1e-10 
         return -np.sum(probabilities * np.log(probabilities + epsilon) + (1 - probabilities) * np.log(1 - probabilities + epsilon))
@@ -369,23 +730,44 @@ class ELMA(BaseStrategy):
         normalized_weights = F.softmax(torch.tensor(weights), dim=0).numpy()
         return normalized_weights
 
+    # def ensemble_predictions(self, model_predictions):
+    #     n = len(model_predictions)
+    #     if n == 1:
+    #         return model_predictions[0]
+    #     num_samples = model_predictions[0].shape[0]
+    #     # model_predictions = np.array([t.numpy() for t in model_predictions])
+    #     model_predictions = np.array(model_predictions)
+    #     weighted_predictions = np.zeros(num_samples)
+    #     for i in range(num_samples):           
+    #         sample_predictions = model_predictions[:, i]            
+    #         entropies = np.array([self.calculate_entropy(pred) for pred in sample_predictions])
+    #         # import pdb; pdb.set_trace()
+    #         weights = self.calculate_weights(entropies)
+    #         weighted_predictions[i] = np.sum(sample_predictions * weights)
+    #     return weighted_predictions 
+
     def ensemble_predictions(self, model_predictions):
         n = len(model_predictions)
         if n == 1:
             return model_predictions[0]
+        
+        # import pdb; pdb.set_trace()
         num_samples = model_predictions[0].shape[0]
-        # model_predictions = np.array([t.numpy() for t in model_predictions])
-        model_predictions = np.array(model_predictions)
+        # model_predictions = np.array(model_predictions)
         weighted_predictions = np.zeros(num_samples)
-        for i in range(num_samples):           
-            sample_predictions = model_predictions[:, i]            
-            entropies = np.array([self.calculate_entropy(pred) for pred in sample_predictions])
-            weights = self.calculate_weights(entropies)
-            weighted_predictions[i] = np.sum(sample_predictions * weights)
-        return weighted_predictions   
+
+        variances = np.array([np.var(pred) for pred in model_predictions])
+
+        weights = variances / np.sum(variances)
+
+        for i in range(n):
+            weighted_predictions += model_predictions[i] * weights[i]
+        
+        return weighted_predictions
+ 
     
     @torch.no_grad()
-    def myeval(self, exp_list: Union[Experience, Sequence[Experience]], **kwargs):
+    def eval(self, exp_list: Union[Experience, Sequence[Experience]], **kwargs):
         """
         Evaluate the current model on a series of experiences and
         returns the last recorded value for each metric.
@@ -414,7 +796,6 @@ class ELMA(BaseStrategy):
             self.make_eval_dataloader(**kwargs)
 
             for lora_id in range(self.current_train_exp_id + 1):
-            # for lora_id in range(1):
                 # Model Adaptation (e.g. freeze/add new units)
                 self.model = self.model_adaptation()
 
@@ -422,17 +803,24 @@ class ELMA(BaseStrategy):
                 """
                 Load each lora to infer
                 """
-                # lora_id = self.experience.current_experience
-                lora_id = self.current_train_exp_id
+                # lora_id = self.current_train_exp_id
                 self.load_for_eval(lora_id)
                 self.eval_epoch(**kwargs)
                 self._after_eval_exp(**kwargs)
             
                 scores = torch.cat(self.score_loader, 0).data.cpu().numpy()
                 self.exp_score_loader.append(scores)
+                labels = torch.cat(self.target_loader, 0).data.cpu().numpy()
+                eer = compute_eer(scores[labels == 0], scores[labels == 1])[0]
+                other_eer = compute_eer(-scores[labels == 0], -scores[labels == 1])[0]
+                eer_cm = min(eer, other_eer)
+
+                print('===> Exp: {} -- lora_id: {} -- EER_CM: {}\n'.format(self.experience.current_experience, lora_id, eer_cm))
             """
             MoE Essemble
             """
+            # if self.current_train_exp_id == 1:
+            #     import pdb; pdb.set_trace()
             print("Predication ensembling ...")
             scores = self.ensemble_predictions(self.exp_score_loader)
             # scores = self.exp_score_loader[-1]
@@ -444,6 +832,8 @@ class ELMA(BaseStrategy):
 
             print('===> Exp: {} EER_CM: {}\n'.format(self.experience.current_experience, eer_cm))
             
+            self.exp_score_loader = []
+            
             # Record it
             self.eer_record[self.clock.train_exp_counter].append(eer_cm)
         
@@ -453,12 +843,12 @@ class ELMA(BaseStrategy):
 
         return res
     
-    def criterion(self, mb_output = None, mb_y = None):
-        """ Loss function. """
-        mb_output = mb_output if mb_output is not None else self.mb_output
-        mb_y = mb_y if mb_y is not None else self.mb_y
-        if isinstance(mb_output, tuple):
-            mb_output = mb_output[0]
-        return self._criterion(mb_output, mb_y)
+    # def criterion(self, mb_output = None, mb_y = None):
+    #     """ Loss function. """
+    #     mb_output = mb_output if mb_output is not None else self.mb_output
+    #     mb_y = mb_y if mb_y is not None else self.mb_y
+    #     if isinstance(mb_output, tuple):
+    #         mb_output = mb_output[0]
+    #     return self._criterion(mb_output, mb_y)
 
 __all__ = ['ELMA']

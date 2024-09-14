@@ -251,6 +251,7 @@ class BaseStrategy:
         """ Loss function. """
         if isinstance(self.mb_output, tuple):
             self.mb_output = self.mb_output[0]
+        # import pdb; pdb.set_trace()
         return self._criterion(self.mb_output, self.mb_y)
 
     def train(self, experiences: Union[Experience, Sequence[Experience]],
@@ -516,8 +517,6 @@ class BaseStrategy:
             # self.dataloader._dl.datasets[0]._indices
             if self._stop_training:
                 break
-            # if self.current_train_exp_id != 0:
-            #     import pdb; pdb.set_trace()
             self._unpack_minibatch()
             self._before_training_iteration(**kwargs)
 

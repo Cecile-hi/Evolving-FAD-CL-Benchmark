@@ -54,7 +54,7 @@ class OWMPlugin(StrategyPlugin):
                     pnorm2 = torch.norm(self.Pl.data,p='fro')
                     self.Pl.data = self.Pl.data / pnorm2
                     w.grad.data = torch.mm(w.grad.data, torch.t(self.Pl.data))
-
+                    
     def pro_weight(self, p,x, w, alpha=1.0, cnn="layer", stride=1):
         if cnn == "layer":
             _, _, L = x.shape

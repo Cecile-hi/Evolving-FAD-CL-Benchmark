@@ -150,7 +150,7 @@ class LoRAMLP_withinitweight(nn.Module, BaseModel):
         self.classifier = lora.Linear(hidden_size, num_classes, r=lora_rank, merge_weights=False)
         
         self._input_size = input_size
-        # self._initialize_weights()
+        self._initialize_weights()
         self.set_requires_grad_true()
 
     def forward(self, x):
@@ -174,12 +174,19 @@ class LoRAMLP_withinitweight(nn.Module, BaseModel):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu')
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
+    # def _initialize_weights(self):
+    #     for m in self.modules():
+    #         if isinstance(m, nn.Linear) or isinstance(m, lora.Linear):
+    #             # nn.init.constant_(m.weight, 0)  # 初始化权重为全零
+    #             nn.init.zeros_(m.weight)
+    #             if m.bias is not None:
+    #                 # nn.init.constant_(m.bias, 0)  # 初始化偏置为全零
+    #                 nn.init.zeros_(m.bias)
+
     
     def set_requires_grad_true(self):
         for param in self.parameters():
             param.requires_grad = True
-
-
 
 
 class SimpleMLP_withinitweight(nn.Module, BaseModel):

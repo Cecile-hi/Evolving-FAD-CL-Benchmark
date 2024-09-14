@@ -13,4 +13,7 @@
 #### 1. Make some modification on original benchmark, now it is more clear and faster
 #### 2. Current 8 exps
 #### 3. Debugging ELMA
-#### 4. Gen a requirements.txt for the current conda env (bmml)
+
+### 2024.09.14
+
+#### ELMA completed show a great result

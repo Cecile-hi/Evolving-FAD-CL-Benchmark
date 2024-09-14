@@ -1,0 +1,58 @@
+{
+      "0": {
+            "Top1_Acc_MB/train_phase/train_stream/Task000": 1.0,
+            "Top1_RunningAcc_Epoch/train_phase/train_stream/Task000": 0.9045,
+            "Loss_MB/train_phase/train_stream/Task000": 0.08141984790563583,
+            "Top1_Acc_Epoch/train_phase/train_stream/Task000": 0.9045,
+            "Loss_Epoch/train_phase/train_stream/Task000": 0.24605747777223588
+      },
+      "1": {
+            "Top1_Acc_MB/train_phase/train_stream/Task001": 0.6875,
+            "Top1_RunningAcc_Epoch/train_phase/train_stream/Task001": 0.4815,
+            "Loss_MB/train_phase/train_stream/Task001": 0.7418757081031799,
+            "Top1_Acc_Epoch/train_phase/train_stream/Task001": 0.4815,
+            "Loss_Epoch/train_phase/train_stream/Task001": 0.7311768050193787
+      },
+      "2": {
+            "Top1_Acc_MB/train_phase/train_stream/Task002": 0.5,
+            "Top1_RunningAcc_Epoch/train_phase/train_stream/Task002": 0.5015,
+            "Loss_MB/train_phase/train_stream/Task002": 0.7011243104934692,
+            "Top1_Acc_Epoch/train_phase/train_stream/Task002": 0.5015,
+            "Loss_Epoch/train_phase/train_stream/Task002": 0.6997587976455688
+      },
+      "3": {
+            "Top1_Acc_MB/train_phase/train_stream/Task003": 0.4375,
+            "Top1_RunningAcc_Epoch/train_phase/train_stream/Task003": 0.5,
+            "Loss_MB/train_phase/train_stream/Task003": 0.7009754776954651,
+            "Top1_Acc_Epoch/train_phase/train_stream/Task003": 0.5,
+            "Loss_Epoch/train_phase/train_stream/Task003": 0.7006323437690735
+      },
+      "4": {
+            "Top1_Acc_MB/train_phase/train_stream/Task004": 0.4375,
+            "Top1_RunningAcc_Epoch/train_phase/train_stream/Task004": 0.5,
+            "Loss_MB/train_phase/train_stream/Task004": 0.7077038288116455,
+            "Top1_Acc_Epoch/train_phase/train_stream/Task004": 0.5,
+            "Loss_Epoch/train_phase/train_stream/Task004": 0.700588152885437
+      },
+      "5": {
+            "Top1_Acc_MB/train_phase/train_stream/Task005": 0.5,
+            "Top1_RunningAcc_Epoch/train_phase/train_stream/Task005": 0.5,
+            "Loss_MB/train_phase/train_stream/Task005": 0.7025867104530334,
+            "Top1_Acc_Epoch/train_phase/train_stream/Task005": 0.5,
+            "Loss_Epoch/train_phase/train_stream/Task005": 0.7032369599342346
+      },
+      "6": {
+            "Top1_Acc_MB/train_phase/train_stream/Task006": 0.4375,
+            "Top1_RunningAcc_Epoch/train_phase/train_stream/Task006": 0.4885,
+            "Loss_MB/train_phase/train_stream/Task006": 0.6980842351913452,
+            "Top1_Acc_Epoch/train_phase/train_stream/Task006": 0.4885,
+            "Loss_Epoch/train_phase/train_stream/Task006": 0.7006337194442749
+      },
+      "7": {
+            "Top1_Acc_MB/train_phase/train_stream/Task007": 0.6875,
+            "Top1_RunningAcc_Epoch/train_phase/train_stream/Task007": 0.5,
+            "Loss_MB/train_phase/train_stream/Task007": 0.7016406059265137,
+            "Top1_Acc_Epoch/train_phase/train_stream/Task007": 0.5,
+            "Loss_Epoch/train_phase/train_stream/Task007": 0.7051982021331787
+      }
+}

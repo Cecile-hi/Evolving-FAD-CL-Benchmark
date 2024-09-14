@@ -83,7 +83,7 @@ def extract(args):
     args.data_folder_path = os.path.join(args.feature_path, args.pretrain_feature)
     return args
 
-def plot_eer_dict(data_dict, output_dir):
+def plot_eer_dict_onlysingle(data_dict, output_dir):
     
     list_length = len(list(data_dict.values())[0])
 
@@ -93,12 +93,44 @@ def plot_eer_dict(data_dict, output_dir):
         plt.figure()  
         x = list(data_dict.keys())  
         y = [values[i] * 100 for values in data_dict.values()] 
-        plt.plot(x, y, label=f"Point {i+1}")
-        plt.xlabel('After Training On')
+        plt.plot(x, y, label=f"EER")
+        plt.xlabel('After Training On Task {}'.format(i + 1))
         plt.ylabel('Evaluate on Task {}'.format(i + 1))
         plt.title('Evaluation EER (%)')
         plt.legend()
         plt.savefig(os.path.join(output_dir, f'Evaluation_on_task_{i+1}.png'))
+
+def plot_eer_dict(data_dict, output_dir):
+    
+    list_length = len(list(data_dict.values())[0])
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Plot individual graphs
+    for i in range(list_length):
+        plt.figure()  
+        x = list(data_dict.keys())  
+        y = [values[i] * 100 for values in data_dict.values()] 
+        plt.plot(x, y, label=f"EER")
+        plt.xlabel('After Training On Task {}'.format(i + 1))
+        plt.ylabel('Evaluate on Task {}'.format(i + 1))
+        plt.title('Evaluation EER (%)')
+        plt.legend()
+        plt.savefig(os.path.join(output_dir, f'Evaluation_on_task_{i+1}.png'))
+        plt.close()
+
+    # Plot all curves on a single graph
+    plt.figure()
+    for i in range(list_length):
+        y = [values[i] * 100 for values in data_dict.values()]
+        plt.plot(x, y, label=f'Eval on Task {i+1}')
+    
+    plt.xlabel('After Training on Tasks')
+    plt.ylabel('EER (%)')
+    plt.title('Evaluation EER on All Tasks')
+    plt.legend()
+    plt.savefig(os.path.join(output_dir, 'Evaluation_on_all_tasks.png'))
+    plt.close()
 
 def move_data_trinity(input_path,remove=False):
     '''
@@ -204,7 +236,6 @@ def main():
                     model = SimpleMLP_withinitweight(num_classes = args.num_classes, input_size = args.pretrain_feature_shape, hidden_size = args.hidden_dim, hidden_layers = args.layer_num, drop_rate=0.0)
                     # model = SimpleMLP_withinitweight(num_classes = args.num_classes, input_size = args.pretrain_feature_shape, hidden_size = 512, hidden_layers = 7, drop_rate=0.0)
                     # model=nn.Linear(args.pretrain_feature_shape,args.num_classes)        
-            # import pdb; pdb.set_trace()
             # Generate a Buffer for Replay/GDumb*/*Reservoir/AGEM*/CoPE 
             data_count = int(args.num_classes * args.num_instance_each_class) if current_mode == 'online' else int(args.num_classes * args.num_instance_each_class * args.buffer_ratio)
             data_count = min(args.max_memory_size, data_count) # buffer_size cannot be greater than args.max_memory_sizes
@@ -250,9 +281,9 @@ def main():
             elif strate=='ELMA':
                 cl_strategy = ELMA(
                     model, optimizer,
-                    CrossEntropyLoss(),
+                    CrossEntropyLoss(reduction = "none"),
                     train_mb_size=args.batch_size, train_epochs=args.nepoch, eval_mb_size=args.batch_size,
-                    evaluator=eval_plugin,device=device,plugins=plugin_list)
+                    evaluator=eval_plugin, device=device, plugins=plugin_list, split = args.split)
             elif 'Replay' in strate: 
                 cl_strategy = Replay(
                     model, optimizer,
