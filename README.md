@@ -16,6 +16,9 @@ Test your deepfake audio detection model’s continual learning ability using ou
 | SI                | 13.2   | 12.0   | 19.2   | 30.4   | 5.2    | 40.0   | 26.4   | 22.4   |
 | ELMA (Ours)       | 5.6    | 2.8    | 3.2    | 6.0    | 2.0    | 20.8   | 16.0   | 13.6   |
 
+The ckpts of ELMA can be found on ["here"]!(https://zenodo.org/records/13762800)!
+Features file will be uploaded and then you can download it!
+
 
 ## 🚀 Quick Start
 
