@@ -18,8 +18,6 @@ Test your deepfake audio detection model’s continual learning ability using ou
 | SI                | 13.2   | 12.0   | 19.2   | 30.4   | 5.2    | 40.0   | 26.4   | 22.4   |
 | ELMA (Ours)       | 5.6    | 2.8    | 3.2    | 6.0    | 2.0    | 20.8   | 16.0   | 13.6   |
 
-<<<<<<< HEAD
-
 ##### The checkpoints of ELMA can be found on ["here"](https://zenodo.org/records/13762800)!
 
 ##### Features file will be uploaded and then you can download it!
@@ -53,7 +51,6 @@ bash train.sh
 * 🔍 Continued debugging of ELMA.
 ### 2024.09.14
 * 🎉 Successfully completed debugging of ELMA, which now shows great results!
-<<<<<<< HEAD
 
 ## Citation
 
