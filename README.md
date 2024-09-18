@@ -4,6 +4,8 @@ This repository hosts the official project of the paper ["Towards Robust Audio D
 
 Test your deepfake audio detection model’s continual learning ability using our benchmark, which supports various state-of-the-art methods.
 
+![Architecture of our Benchmark](./FAD_CL_updated_methods.svg)
+
 | **Method (EER%)** | **T1** | **T2** | **T3** | **T4** | **T5** | **T6** | **T7** | **T8** |
 |:-----------------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
 | Replay            | 7.6    | 3.6    | 8.0    | 9.6    | 3.6    | 29.6   | 16.0   | 14.8   |
@@ -16,6 +18,9 @@ Test your deepfake audio detection model’s continual learning ability using ou
 | SI                | 13.2   | 12.0   | 19.2   | 30.4   | 5.2    | 40.0   | 26.4   | 22.4   |
 | ELMA (Ours)       | 5.6    | 2.8    | 3.2    | 6.0    | 2.0    | 20.8   | 16.0   | 13.6   |
 
+##### The checkpoints of ELMA can be found on ["here"](https://zenodo.org/records/13762800)!
+
+##### Features file will be uploaded and then you can download it!
 
 ## 🚀 Quick Start
 
@@ -30,7 +35,8 @@ pip install -r requirement.txt
 ```bash
 bash train.sh
 ```
-🗓️ Project Timeline --------------------
+## 🗓️ Change Log
+
 ### 2024.05.08 
 * 🎯 Added the **Equal Error Rate (EER)** metric to the benchmark. 
 * 🚀 To start training, simply run: 
@@ -46,3 +52,19 @@ bash train.sh
 * 🔍 Continued debugging of ELMA.
 ### 2024.09.14
 * 🎉 Successfully completed debugging of ELMA, which now shows great results!
+
+## Citation
+
+If you find this toolkit useful, please consider citing following papers.
+
+```
+@misc{elma,
+  title={Towards Robust Audio Deepfake Detection: A Evolving Benchmark for Continual Learning},
+  author={Xiaohui Zhang, Jiangyan Yi, and Jianhua Tao},
+  year={2024},
+  eprint={2405.08596},
+  archivePrefix={arXiv},
+  primaryClass={cs.SD},
+  url={https://arxiv.org/abs/2405.08596},
+}
+```
